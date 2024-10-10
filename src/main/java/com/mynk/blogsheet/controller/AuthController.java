@@ -1,9 +1,13 @@
 package com.mynk.blogsheet.controller;
 
+import com.mynk.blogsheet.dto.ApiResponse;
 import com.mynk.blogsheet.dto.LoginDTO;
+import com.mynk.blogsheet.dto.RegisterResponse;
 import com.mynk.blogsheet.dto.UserDTO;
+import com.mynk.blogsheet.models.User;
 import com.mynk.blogsheet.services.JwtService;
 import com.mynk.blogsheet.services.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,15 +29,18 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {
+    public ResponseEntity<ApiResponse<RegisterResponse>> registerUser(@Valid @RequestBody UserDTO userDTO) {
         System.out.println("Registering user");
         System.out.println(userDTO);
-        userService.registerUser(userDTO);
-        return ResponseEntity.ok("User registered successfully");
+        User registeredUser = userService.registerUser(userDTO);
+        RegisterResponse response = new RegisterResponse(registeredUser.getId());
+        return ResponseEntity.ok(ApiResponse.success(response, "User registration successful"));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> login(@Valid @RequestBody LoginDTO loginDTO) {
+        System.out.println("Registering user");
+        System.out.println(loginDTO);
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword())
         );
@@ -41,8 +48,9 @@ public class AuthController {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String token = jwtService.generateToken(userDetails);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("token", token);
-        return ResponseEntity.ok(response);
+        Map<String, String> data = new HashMap<>();
+        data.put("token", token);
+
+        return ResponseEntity.ok(ApiResponse.success(data, "Login successful"));
     }
 }
